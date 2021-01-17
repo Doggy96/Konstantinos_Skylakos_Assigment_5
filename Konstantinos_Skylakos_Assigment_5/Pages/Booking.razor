@@ -1,0 +1,241 @@
+﻿@page "/booking"
+
+@using static Konstantinos_Skylakos_Assigment_5.Program
+
+<link href="css/Custom.css" rel="stylesheet" />
+
+
+<div style="background-color:darkgreen; width: 600px">
+
+
+    <p>
+        <input id="Text1" type="text" @bind="hotelName" autocomplete="on" style="width:500px" />
+        <button class="btn btn-primary" @onclick="SearchFunc">Search</button>
+    </p>
+
+    <p>
+
+        <table style="width:600px">
+            <tr>
+                <td><input id="dateIn" type="date" @bind="checkIn" /></td>
+                <td><input id="dateOut" type="date" @bind="checkOut" /></td>
+                <td>
+                    <select id="roomType" @bind="sellRoom">
+                        @{int j = 0; }
+
+                        <option value="">Select Room-Type</option>
+
+                        @foreach (var item in roomtypes)
+                        {
+                            <option value=@j>@item.name</option>
+                            { j++; }
+                        }
+                    </select>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    Price is @selPrice
+                </td>
+
+                <td>
+                    Property type
+                </td>
+
+                <td>
+                    Guest rating
+                </td>
+
+                <td>
+                    Hotel location
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <input id="Text1" @bind="selPrice" type="range" min=@minPrice max=@maxPrice />
+                </td>
+
+                <td>
+                    <select id="Stars" @bind="selStars">
+                            <option value="1">* (1)</option>
+                            <option value="2">** (2)</option>
+                            <option value="3">*** (3)</option>
+                            <option value="4">**** (4)</option>
+                            <option value="5">***** (5)</option>
+                    </select>
+                </td>
+
+                <td>
+                    <select id="GuestRatings" @bind="guestRating">
+                        <option value="0">Okay</option>
+                        <option value="2">Fair</option>
+                        <option value="6">Good</option>
+                        <option value="7">Very Good</option>
+                        <option value="8,5">Excellent</option>
+                    </select>
+                </td>
+
+                <td>
+                    <select id="city" @bind="city">
+
+                        <option value="">Select City</option>
+
+                        @for (int i = 0; i < cities.Count; i++)
+                        {
+                            <option>@cities[i]</option>
+                        }
+                    </select>
+                </td>
+            </tr>
+        </table>
+    </p>
+
+</div>
+
+<div style="background-color:dimgray; width:600px">
+    <table>
+        <tr>
+            <td>
+                
+            </td>
+            <td style="width: 500px"></td>
+            <td></td>
+            <td>
+                <select id="filter" @bind="filter">
+
+                    <option value="" style="text-align: right">Select Facilities</option>
+
+                    @foreach (var item in filters)
+                    {
+                        <option>@item</option>
+                    }
+                </select>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div>
+
+    <table style="width:600px; ">
+        @for (int i = 0; i < fentries.Count; i++)
+        {
+            var fentry = fentries[i];
+            string srcURL = "https://www.google.com/maps/embed/v1/place?key=AIzaSyDjzJwiMGbMO0bdeY-kzDOJ-VyshOPjQiI&q=" +
+                @fentry.hotelName + ", " + fentry.city;
+            <tr>
+                <td style="width: 210px">
+                    <img src=@fentry.thumbnail alt="" style="height: 200px; width: 200px" />
+                </td>
+                <td>@fentry.hotelName <br /> @stars.PadRight(fentry.rating, '*') <br /> @fentry.city <br /> @fentry.ratings.no &nbsp; @fentry.ratings.text </td>
+                <td>@fentry.price per day</td>
+                <td>
+                    @{
+                        stayDays = (checkOut - checkIn).TotalDays;
+                        totalPrice = stayDays * entry.price;
+                    }
+                    Hotel Website <br /> Total cost for @stayDays &nbsp; days @totalPrice
+                    
+                <iframe width="200"
+                        height="150"
+                        frameborder="0" style="border:0"                 
+                        src=@srcURL
+                        allowfullscreen>
+                  
+                    <NavLink class="nav-link" href="@fentry.mapurl"> View Map </NavLink>
+                </iframe>
+                    
+                </td>
+            </tr>
+        }
+
+    </table>
+
+</div>
+@code {
+    private DateTime checkIn = DateTime.Parse("01/01/2021"), checkOut = DateTime.Parse("02/01/2021");
+    private Entry entry = entries[0];
+    string hotelName = "Hilton", stars = "", sellRoom = "", city = "", filter = "", selStars = "1", guestRating = "0";
+    List<Entry> fentries = new List<Entry>();
+    int selPrice = 0;
+    double stayDays = 0, totalPrice = 0;
+
+
+    private void SearchFunc()
+    {
+        fentries = entries;
+
+        if (hotelName != "")
+        {
+            fentries = (from s in fentries where s.hotelName.Contains(hotelName, StringComparison.OrdinalIgnoreCase) select s).ToList();
+        }
+
+        if (city != "")
+        {
+            fentries = (from s in fentries where s.city.Equals(city) select s).ToList();
+        }
+
+        if (selPrice > 0)
+        {
+            fentries = (from s in fentries where s.price < selPrice select s).ToList();
+        }
+
+        if (filter != "")
+        {
+            List<Entry> filterList = new List<Entry>();
+
+            foreach (var fentry in fentries)
+            {
+                foreach (var item in fentry.filters)
+                {
+                    if (filter.Equals(item.name))
+                    {
+                        filterList.Add(fentry);
+                        break;
+                    }
+                }
+            }
+
+            fentries = filterList;
+        }
+
+        int intStars = int.Parse(selStars);
+
+        fentries = (from s in fentries where s.rating >= intStars select s).ToList();
+
+        float floatGuestRating = float.Parse(guestRating);
+
+        fentries = (from s in fentries where s.ratings.no >= floatGuestRating select s).ToList();
+
+    }
+
+    private void DispURL()
+    {
+
+    }
+
+    private void HandleValidSubmit()
+    {
+
+    }
+
+
+    private void DetailFunc()
+    {
+
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+    }
+
+}
